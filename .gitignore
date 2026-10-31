@@ -1,5 +1,20 @@
-.env
+# Virtual Environment
 .venv/
 venv/
+
+# Environment Variables
+.env
+
+# Python Cache
 __pycache__/
 *.pyc
+
+# Downloaded Audio Files
+downloads/
+downloades/
+*.wav
+*.mp3
+*.mp4
+
+# Temporary Files
+*.tmp
