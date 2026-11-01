@@ -1,5 +1,7 @@
-# ── AI Meeting Assistant ── requirements.txt ──────────────────────────────────
+# ── AI Video Assistant ── requirements.txt ────────────────────────────────────
 # Python >= 3.10 recommended
+# Install:  pip install -r requirements.txt
+# Run UI:   streamlit run app.py
 
 # ── Audio / Video acquisition ─────────────────────────────────────────────────
 yt-dlp>=2024.4.9                  # Download audio from YouTube URLs
@@ -18,8 +20,8 @@ deep-translator>=1.11.4           # Lightweight translation wrapper (Google back
 langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.2.0
-langchain-mistralai>=0.1.0        # LangChain wrapper for Mistral API
-mistralai>=0.4.0                  # Official Mistral Python client
+langchain-groq>=0.1.0        # LangChain wrapper for Groq API
+groq>=0.4.0                  # Official Groq Python client
 
 # ── RAG Pipeline ──────────────────────────────────────────────────────────────
 chromadb>=0.5.0                   # Local vector store
@@ -28,17 +30,17 @@ langchain-huggingface>=0.0.3      # LangChain ↔ HuggingFace embeddings bridge
 huggingface-hub>=0.23.0           # Model downloading from HuggingFace Hub
 tiktoken>=0.7.0                   # Token counting for text splitting
 
-# ── Streamlit UI ──────────────────────────────────────────────────────────────
-streamlit>=1.35.0
-streamlit-extras>=0.4.0           # Additional Streamlit widgets / utilities
+# ── Streamlit UI (app.py) ─────────────────────────────────────────────────────
+streamlit>=1.35.0                 # st.status, st.chat_input, st.chat_message need >= 1.35
 watchdog>=4.0.0                   # File-change watcher (improves Streamlit hot-reload)
+# streamlit-extras>=0.4.0         # Optional: not used by app.py, uncomment if you add extra widgets
 
 # ── PDF & TXT Export ──────────────────────────────────────────────────────────
-reportlab>=4.2.0                  # PDF generation
-fpdf2>=2.7.9                      # Lightweight alternative PDF library
+reportlab>=4.2.0                  # PDF generation (use this one for PDF export)
+# fpdf2>=2.7.9                    # Optional: lightweight alternative, only one PDF library is needed
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
-python-dotenv>=1.0.0              # Load API keys from .env
+python-dotenv>=1.0.0              # Load API keys from .env (MISTRAL_API_KEY etc.)
 numpy>=1.26.0
 tqdm>=4.66.0                      # Progress bars
 requests>=2.32.0
