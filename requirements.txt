@@ -8,8 +8,7 @@ audioop-lts>=0.2.1; python_version >= "3.13"
               
 pydub>=0.25.1                    
 ffmpeg-python>=0.2.0              
-yt-dlp>=2024.4.9
-yt-dlp[default]
+yt-dlp[default]>=2025.05.22
 deno>=2.0.0,<3.0.0
 bgutil-ytdlp-pot-provider==2.0.2
 
