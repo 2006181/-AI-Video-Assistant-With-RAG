@@ -4,31 +4,116 @@ import yt_dlp
 from pydub import AudioSegment
 import os
 
+BGUTIL_DIR = Path("/tmp/bgutil-ytdlp-pot-provider")
+BGUTIL_SERVER_DIR = BGUTIL_DIR / "server"
+
+_BGUTIL_READY = False
+
+
+def setup_bgutil_provider():
+
+    global _BGUTIL_READY
+
+    if _BGUTIL_READY:
+        return
+
+    if not BGUTIL_SERVER_DIR.exists():
+
+        print("Cloning BgUtils PO Token Provider...")
+
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--single-branch",
+                "--branch", "2.0.2",
+                "https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git",
+                str(BGUTIL_DIR)
+            ],
+            check=True
+        )
+
+    print("Installing BgUtils Deno dependencies...")
+
+    subprocess.run(
+        [
+            "deno",
+            "install",
+            "--allow-scripts=npm:canvas",
+            "--frozen"
+        ],
+        cwd=str(BGUTIL_SERVER_DIR),
+        check=True
+    )
+
+    _BGUTIL_READY = True
+
+    print("BgUtils PO Token Provider ready!")
+    
 DOWNLOAD_DIR = 'downloades'
 os.makedirs(DOWNLOAD_DIR,exist_ok = True)
 
-def download_youtube_audio(url :str) ->str:
-    output_path = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+def download_youtube_audio(url: str) -> str:
+
+    setup_bgutil_provider()
+
+    output_path = os.path.join(
+        DOWNLOAD_DIR,
+        "%(title)s.%(ext)s"
+    )
+
     ydl_opts = {
-    "format": "bestaudio/best",
-    "outtmpl": output_path,
-    "js_runtimes": {
-        "deno": {}
-    },
+
+        "format": "bestaudio/best",
+
+        "outtmpl": output_path,
+
+        "js_runtimes": {
+            "deno": {}
+        },
+
+        "extractor_args": {
+
+            "youtube": {
+                "player_client": ["mweb"]
+            },
+
+            "youtubepot-bgutilscript": {
+                "server_home": str(BGUTIL_SERVER_DIR)
+            }
+        },
+
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "wav",
-                "preferredquality": "192",
+                "preferredquality": "192"
             }
         ],
-        "quiet": True,
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info).replace(".webm", ".wav").replace(".m4a", ".wav")
-    return filename
 
+        "quiet": False,
+        "verbose": True,
+        "noplaylist": True,
+        "retries": 3,
+        "fragment_retries": 3
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+
+        info = ydl.extract_info(url, download=True)
+
+        filename = (
+            os.path.splitext(
+                ydl.prepare_filename(info)
+            )[0] + ".wav"
+        )
+
+    if not os.path.exists(filename):
+        raise FileNotFoundError(
+            f"Downloaded WAV file not found: {filename}"
+        )
+
+    return filename
 
 
 def convert_to_wav(input_path: str) -> str:
