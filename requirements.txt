@@ -2,11 +2,17 @@
 # Python >= 3.10 recommended
 # Install:  pip install -r requirements.txt
 # Run UI:   streamlit run app.py
+audioop-lts>=0.2.1; python_version >= "3.13"
 
 # ── Audio / Video acquisition ─────────────────────────────────────────────────
-yt-dlp>=2024.4.9                  # Download audio from YouTube URLs
-pydub>=0.25.1                     # Audio file manipulation / format conversion
-ffmpeg-python>=0.2.0              # FFmpeg bindings (FFmpeg binary must be installed separately)
+
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
+yt-dlp[default]>=2025.05.22
+deno>=2.4.3,<3.0.0
+bgutil-ytdlp-pot-provider==2.0.2
+
+audioop-lts>=0.2.2; python_version >= "3.13"
 
 # ── Speech-to-Text (local Whisper) ────────────────────────────────────────────
 openai-whisper>=20231117          # OpenAI Whisper (runs locally)
@@ -22,6 +28,7 @@ langchain-core>=0.2.0
 langchain-community>=0.2.0
 langchain-groq>=0.1.0        # LangChain wrapper for Groq API
 groq>=0.4.0                  # Official Groq Python client
+langchain-chroma
 
 # ── RAG Pipeline ──────────────────────────────────────────────────────────────
 chromadb>=0.5.0                   # Local vector store

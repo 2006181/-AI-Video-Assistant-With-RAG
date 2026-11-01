@@ -41,7 +41,7 @@ The app detects where it is running and shows only the options that work there. 
 | Speech-to-text (English) | OpenAI Whisper (local, free) |
 | Speech-to-text (Hindi/Hinglish) | Sarvam AI |
 | LLM pipeline | LangChain LCEL |
-| LLM | Groq (default model `openai/gpt-oss-120b`, configurable) |
+| LLM | Mistral AI (free API) |
 | Vector database | ChromaDB |
 | Embeddings | HuggingFace (local, free) |
 | Audio/video handling | yt-dlp, pydub, FFmpeg |
@@ -103,7 +103,7 @@ YouTube URL / video / audio file
 
 - Python 3.10 to 3.12 recommended
 - [FFmpeg](https://ffmpeg.org/download.html) installed and added to your PATH
-- API keys for Groq and Sarvam AI
+- API keys for Mistral AI and Sarvam AI
 
 ### 2. Clone the repository
 
@@ -137,8 +137,7 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-GROQ_API_KEY=your_groq_key_here
-GROQ_MODEL=openai/gpt-oss-120b
+MISTRAL_API_KEY=your_mistral_key_here
 SARVAM_API_KEY=your_sarvam_key_here
 ```
 
