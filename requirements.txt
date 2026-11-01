@@ -2,6 +2,7 @@
 # Python >= 3.10 recommended
 # Install:  pip install -r requirements.txt
 # Run UI:   streamlit run app.py
+audioop-lts>=0.2.1; python_version >= "3.13"
 
 # ── Audio / Video acquisition ─────────────────────────────────────────────────
 yt-dlp>=2024.4.9                  # Download audio from YouTube URLs
