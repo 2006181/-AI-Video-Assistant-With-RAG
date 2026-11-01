@@ -9,7 +9,9 @@ yt-dlp>=2024.4.9                  # Download audio from YouTube URLs
 pydub>=0.25.1                     # Audio file manipulation / format conversion
 ffmpeg-python>=0.2.0              # FFmpeg bindings (FFmpeg binary must be installed separately)
 yt-dlp[default]
-deno>=2.3.0
+deno>=2.0.0,<3.0.0
+bgutil-ytdlp-pot-provider==2.0.2
+
 # ── Speech-to-Text (local Whisper) ────────────────────────────────────────────
 openai-whisper>=20231117          # OpenAI Whisper (runs locally)
 torch>=2.2.0                      # PyTorch backend for Whisper
