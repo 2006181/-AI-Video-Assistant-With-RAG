@@ -1,8 +1,15 @@
 """
 AI Video Assistant - Streamlit UI
 Run with:  streamlit run app.py
-Place this file in the same folder as your existing main file
-(next to the `core/` and `utils/` folders).
+
+Modes
+-----
+Local  : YouTube link, video file or audio file
+Hosted : audio file only (YouTube downloads are blocked on cloud servers,
+         and video files are large)
+
+The mode is detected automatically (Streamlit Cloud = hosted).
+Force a mode with the environment variable APP_MODE=local or APP_MODE=hosted.
 """
 import os
 import re
@@ -23,6 +30,21 @@ from core.extractor import (
     extract_questions,
 )
 from core.rag_engine import build_rag_chain, ask_question
+
+# ------------------------------------------------------------------ mode
+AUDIO_TYPES = ["mp3", "wav", "m4a", "aac", "ogg", "flac", "wma"]
+VIDEO_TYPES = ["mp4", "mkv", "mov", "webm", "avi"]
+
+
+def detect_hosted() -> bool:
+    """True when running on a hosted server (e.g. Streamlit Cloud)."""
+    mode = os.getenv("APP_MODE", "").strip().lower()
+    if mode in ("hosted", "local"):
+        return mode == "hosted"
+    return os.path.exists("/mount/src") or os.getenv("HOME", "") == "/home/adminuser"
+
+
+IS_HOSTED = detect_hosted()
 
 # ------------------------------------------------------------------ page setup
 st.set_page_config(
@@ -52,8 +74,18 @@ CSS = """
 
 html, body, [class*="css"], .stApp { font-family: 'Inter', sans-serif; color: var(--text); }
 .stApp { background: radial-gradient(1200px 500px at 85% -10%, #1C2750 0%, var(--bg) 60%); }
-#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
-.block-container { padding-top: 2rem; max-width: 1200px; }
+
+/* hide menu/footer but keep the header so the sidebar toggle always works */
+#MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent; }
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"],
+[data-testid="stExpandSidebarButton"] { visibility: visible !important; color: var(--text) !important; }
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stExpandSidebarButton"] { background: var(--surface-2) !important; border-radius: 10px; }
+
+.block-container { padding-top: 3.5rem; max-width: 1200px; }
 
 h1, h2, h3, .hero-title { font-family: 'Sora', sans-serif !important; letter-spacing: -0.02em; }
 
@@ -62,15 +94,18 @@ section[data-testid="stSidebar"] { background: var(--surface); border-right: 1px
 section[data-testid="stSidebar"] * { color: var(--text); }
 .brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.3rem; margin-bottom: .2rem; }
 .brand span { color: var(--accent); }
-.tagline { color: var(--muted); font-size: .85rem; margin-bottom: 1.2rem; }
+.tagline { color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+.mode-pill { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .78rem;
+             border: 1px solid var(--line); background: var(--surface-2); margin-bottom: 1rem; }
+.mode-note { color: var(--muted); font-size: .82rem; margin: .2rem 0 1rem 0; line-height: 1.5; }
 
 /* hero */
 .hero { padding: 2.2rem 2.4rem; border: 1px solid var(--line); border-radius: 20px;
         background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%); margin-bottom: 1.4rem; }
 .hero-title { font-size: 2.6rem; font-weight: 800; line-height: 1.1; margin: 0 0 .6rem 0; }
-.hero-sub { color: var(--muted); font-size: 1.05rem; max-width: 620px; }
+.hero-sub { color: var(--muted); font-size: 1.05rem; max-width: 640px; }
 
-/* feature chips on landing */
+/* feature cards on landing */
 .feature-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 1rem; }
 .feature { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.2rem; }
 .feature b { font-family: 'Sora', sans-serif; display:block; margin-bottom:.3rem; }
@@ -90,8 +125,8 @@ section[data-testid="stSidebar"] * { color: var(--text); }
 @media (max-width: 800px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } .hero-title{font-size:2rem;} }
 
 /* content cards */
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.3rem 1.5rem; height: 100%; }
-.card h4 { font-family: 'Sora', sans-serif; margin: 0 0 .7rem 0; font-size: 1.05rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.3rem 1.5rem; }
+.card h4 { font-family: 'Sora', sans-serif; margin: 0; font-size: 1.05rem; }
 .card.accent { border-left: 4px solid var(--accent); }
 .card.amber  { border-left: 4px solid var(--amber); }
 .card.mint   { border-left: 4px solid var(--mint); }
@@ -106,6 +141,7 @@ section[data-testid="stSidebar"] * { color: var(--text); }
 .stButton > button, .stDownloadButton > button {
   background: var(--accent); color: #0E1320; font-weight: 600; border: 0; border-radius: 10px; padding: .55rem 1.1rem;
 }
+section[data-testid="stSidebar"] .stButton > button { width: 100%; }
 .stButton > button:hover, .stDownloadButton > button:hover { background: #9AAEFF; color: #0E1320; }
 .stButton > button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 
@@ -157,20 +193,47 @@ def build_report_md(r: dict) -> str:
 
 def card(title: str, body: str, tone: str = "accent"):
     st.markdown(f'<div class="card {tone}"><h4>{title}</h4></div>', unsafe_allow_html=True)
-    # Render body as real markdown (lists etc.) just below the card header
     st.markdown(body if str(body).strip() else "_Nothing found._")
+
+
+def with_retry(fn, *args, tries: int = 5, base_delay: float = 2.0):
+    """Retry on rate limits (429) with exponential backoff."""
+    for attempt in range(tries):
+        try:
+            return fn(*args)
+        except Exception as e:
+            if "429" in str(e) and attempt < tries - 1:
+                time.sleep(base_delay * (2 ** attempt))
+            else:
+                raise
+
+
+def friendly_error(e: Exception) -> str:
+    msg = str(e)
+    if "403" in msg or "Forbidden" in msg or "Sign in to confirm" in msg:
+        return (
+            "YouTube blocked this download. Run the app locally to use YouTube links, "
+            "or upload the audio file instead."
+        )
+    if "429" in msg or "Rate limit" in msg or "rate_limit" in msg:
+        return "The API rate limit was reached. Wait 1-2 minutes and press Analyze again."
+    if "model_not_found" in msg or "does not exist" in msg:
+        return "The LLM model name is not available. Set a valid GROQ_MODEL in your .env or secrets."
+    if "ffmpeg" in msg.lower() or "ffprobe" in msg.lower():
+        return "FFmpeg was not found. Install FFmpeg (locally) or add it to packages.txt (hosted)."
+    return f"Could not process this input: {msg}"
 
 
 def run_pipeline_ui(source: str, language: str) -> dict:
     """Same pipeline as the CLI, with live progress."""
     steps = [
-        "Downloading and splitting audio",
+        "Preparing and splitting audio",
         "Transcribing speech",
         "Writing title and summary",
         "Finding action items, decisions and questions",
         "Indexing transcript for chat",
     ]
-    with st.status("Analyzing your video…", expanded=True) as status:
+    with st.status("Analyzing your audio…", expanded=True) as status:
         st.write(f"⏳ {steps[0]}")
         chunks = process_input(source)
 
@@ -178,13 +241,17 @@ def run_pipeline_ui(source: str, language: str) -> dict:
         transcript = transcribe_all(chunks, language)
 
         st.write(f"⏳ {steps[2]}")
-        title = generate_title(transcript)
-        summary = summarize(transcript)
+        title = with_retry(generate_title, transcript)
+        time.sleep(1.0)
+        summary = with_retry(summarize, transcript)
 
         st.write(f"⏳ {steps[3]}")
-        actions = extract_action_items(transcript)
-        decisions = extract_key_decisions(transcript)
-        questions = extract_questions(transcript)
+        time.sleep(1.0)
+        actions = with_retry(extract_action_items, transcript)
+        time.sleep(1.0)
+        decisions = with_retry(extract_key_decisions, transcript)
+        time.sleep(1.0)
+        questions = with_retry(extract_questions, transcript)
 
         st.write(f"⏳ {steps[4]}")
         rag_chain = build_rag_chain(transcript)
@@ -213,63 +280,94 @@ st.session_state.setdefault("pending_q", None)
 # ------------------------------------------------------------------ sidebar
 with st.sidebar:
     st.markdown('<div class="brand">AI Video <span>Assistant</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="tagline">Turn any video or meeting into notes you can chat with.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tagline">Turn any recording into notes you can chat with.</div>', unsafe_allow_html=True)
 
-    input_mode = st.radio("Source", ["YouTube link", "Upload file"], horizontal=True)
-    source, tmp_path = None, None
+    if IS_HOSTED:
+        st.markdown('<div class="mode-pill">Hosted · audio only</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="mode-note">This hosted version accepts audio files. '
+            'For YouTube links and video files, run the app locally.</div>',
+            unsafe_allow_html=True,
+        )
+        input_mode = "Upload file"
+        accepted_types = AUDIO_TYPES
+        upload_label = "Audio file"
+    else:
+        st.markdown('<div class="mode-pill">Local · YouTube, video and audio</div>', unsafe_allow_html=True)
+        input_mode = st.radio("Source", ["YouTube link", "Upload file"], horizontal=True)
+        accepted_types = AUDIO_TYPES + VIDEO_TYPES
+        upload_label = "Audio or video file"
+
+    youtube_url, uploaded = "", None
 
     if input_mode == "YouTube link":
-        source = st.text_input("YouTube URL", placeholder="https://www.youtube.com/watch?v=…").strip()
+        youtube_url = st.text_input("YouTube URL", placeholder="https://www.youtube.com/watch?v=…").strip()
     else:
-        up = st.file_uploader(
-            "Audio or video file",
-            type=["mp3", "wav", "m4a", "mp4", "mkv", "mov", "webm"],
-        )
-        if up is not None:
-            suffix = os.path.splitext(up.name)[1]
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
-                f.write(up.getbuffer())
-                tmp_path = f.name
-            source = tmp_path
+        uploaded = st.file_uploader(upload_label, type=accepted_types)
 
     language = st.selectbox("Spoken language", ["english", "hinglish"])
 
-    go = st.button("Analyze", use_container_width=True, disabled=not source)
+    has_input = bool(youtube_url) if input_mode == "YouTube link" else uploaded is not None
+    go = st.button("Analyze", disabled=not has_input)
 
     if st.session_state.result:
         st.divider()
-        if st.button("Start over", use_container_width=True):
+        if st.button("Start over"):
             st.session_state.result = None
             st.session_state.messages = []
             st.rerun()
 
 # ------------------------------------------------------------------ run analysis
-if go and source:
+if go and has_input:
+    tmp_path = None
     try:
+        if input_mode == "YouTube link":
+            source = youtube_url
+        else:
+            ext = os.path.splitext(uploaded.name)[1].lower().lstrip(".")
+            if IS_HOSTED and ext not in AUDIO_TYPES:
+                raise ValueError("The hosted version accepts audio files only (mp3, wav, m4a, aac, ogg, flac, wma).")
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as f:
+                f.write(uploaded.getbuffer())
+                tmp_path = f.name
+            source = tmp_path
+
         st.session_state.result = run_pipeline_ui(source, language)
         st.session_state.messages = []
     except Exception as e:
-        st.error(
-            f"Could not process this input: {e}\n\n"
-            "Check the link or file, then press Analyze again."
-        )
+        st.error(friendly_error(e))
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
 result = st.session_state.result
 
 # ------------------------------------------------------------------ landing
 if not result:
+    if IS_HOSTED:
+        sub = (
+            "Upload an audio recording. You get a transcript, a summary, the action items and "
+            "decisions, and a chat that answers questions from what was actually said."
+        )
+    else:
+        sub = (
+            "Paste a YouTube link or upload an audio or video file. You get a transcript, a summary, "
+            "the action items and decisions, and a chat that answers questions from what was actually said."
+        )
     st.markdown(
-        """
+        f"""
         <div class="hero">
-          <div class="hero-title">Watch less. Know more.</div>
-          <div class="hero-sub">Paste a YouTube link or upload a recording. You get a transcript,
-          a summary, the action items and decisions, and a chat that answers questions from what was actually said.</div>
+          <div class="hero-title">Listen less. Know more.</div>
+          <div class="hero-sub">{sub}</div>
         </div>
         <div class="feature-row">
-          <div class="feature"><b>Summary</b><span>The whole video in a few clear paragraphs.</span></div>
-          <div class="feature"><b>Action items</b><span>Who needs to do what, pulled from the talk.</span></div>
+          <div class="feature"><b>Summary</b><span>The whole recording in a few clear points.</span></div>
+          <div class="feature"><b>Action items</b><span>Who needs to do what, and by when.</span></div>
           <div class="feature"><b>Decisions and questions</b><span>What was settled and what is still open.</span></div>
-          <div class="feature"><b>Chat with the video</b><span>Ask anything, answers come from the transcript.</span></div>
+          <div class="feature"><b>Chat with the recording</b><span>Ask anything, answers come from the transcript.</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -308,7 +406,7 @@ with tab_overview:
     st.download_button(
         "Download report (.md)",
         data=build_report_md(result),
-        file_name="video-report.md",
+        file_name="meeting-report.md",
         mime="text/markdown",
     )
 
@@ -335,7 +433,7 @@ with tab_transcript:
     st.download_button("Download transcript (.txt)", data=text, file_name="transcript.txt")
 
 with tab_chat:
-    st.markdown("Ask a question. Answers come from this video's transcript.")
+    st.markdown("Ask a question. Answers come from this recording's transcript.")
 
     if not st.session_state.messages:
         cols = st.columns(len(SUGGESTED))
@@ -348,7 +446,7 @@ with tab_chat:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
-    typed = st.chat_input("Ask about the video…")
+    typed = st.chat_input("Ask about the recording…")
     question = typed or st.session_state.pending_q
     st.session_state.pending_q = None
 
@@ -359,8 +457,8 @@ with tab_chat:
         with st.chat_message("assistant"):
             with st.spinner("Searching the transcript…"):
                 try:
-                    answer = ask_question(result["rag_chain"], question)
+                    answer = with_retry(ask_question, result["rag_chain"], question)
                 except Exception as e:
-                    answer = f"I couldn't get an answer: {e}"
+                    answer = friendly_error(e)
             st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
