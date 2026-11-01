@@ -1,5 +1,4 @@
 
-
 import os
 import shutil
 import subprocess
@@ -28,17 +27,17 @@ _BGUTIL_READY = False
 # --------------------------------------------------
 
 def setup_bgutil_provider():
+
     global _BGUTIL_READY
 
     if _BGUTIL_READY:
         return
 
-    # Clone provider if it is not available
+    # Clone provider if required
     if not BGUTIL_SERVER_DIR.exists():
 
         print("Cloning BgUtils PO Token Provider...")
 
-        # Remove incomplete previous clone, if any
         if BGUTIL_DIR.exists():
             shutil.rmtree(BGUTIL_DIR)
 
@@ -55,15 +54,27 @@ def setup_bgutil_provider():
             check=True,
         )
 
+    # Verify provider files
+    print("\nChecking BgUtils files...")
+
+    print("Provider directory:", BGUTIL_DIR)
+    print("Server directory:", BGUTIL_SERVER_DIR)
+    print("Server exists:", BGUTIL_SERVER_DIR.exists())
+    print("Script path:", BGUTIL_SCRIPT)
+    print("Script exists:", BGUTIL_SCRIPT.is_file())
+
     if not BGUTIL_SCRIPT.is_file():
         raise FileNotFoundError(
             f"BgUtils script not found: {BGUTIL_SCRIPT}"
         )
 
-    print(f"BgUtils script found: {BGUTIL_SCRIPT}")
+    print("Script directory contents:")
+
+    for file in (BGUTIL_SERVER_DIR / "src").glob("*"):
+        print(" -", file.name)
 
     # Install Deno dependencies
-    print("Installing BgUtils Deno dependencies...")
+    print("\nInstalling BgUtils Deno dependencies...")
 
     subprocess.run(
         [
@@ -76,9 +87,11 @@ def setup_bgutil_provider():
         check=True,
     )
 
+    print("Deno dependencies installed successfully!")
+
     _BGUTIL_READY = True
 
-    print("BgUtils PO Token Provider ready!")
+    print("BgUtils PO Token Provider ready!\n")
 
 
 # --------------------------------------------------
@@ -89,9 +102,12 @@ def download_youtube_audio(url: str) -> str:
 
     setup_bgutil_provider()
 
-    output_path = str(DOWNLOAD_DIR / "%(id)s.%(ext)s")
+    output_path = str(
+        DOWNLOAD_DIR / "%(id)s.%(ext)s"
+    )
 
     ydl_opts = {
+
         "format": "bestaudio/best",
 
         "outtmpl": output_path,
@@ -105,12 +121,17 @@ def download_youtube_audio(url: str) -> str:
 
         # BgUtils PO Token Provider
         "extractor_args": {
+
             "youtube": {
-                "player_client": ["mweb", "tv", "web_safari"]
+                "player_client": [
+                    "mweb",
+                    "tv",
+                    "web_safari"
+                ]
             },
 
             "youtubepot-bgutilscript": {
-                "script_path": str(BGUTIL_SCRIPT)
+                "server_home": str(BGUTIL_SERVER_DIR)
             },
         },
 
@@ -135,18 +156,24 @@ def download_youtube_audio(url: str) -> str:
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
-        info = ydl.extract_info(url, download=True)
+        info = ydl.extract_info(
+            url,
+            download=True
+        )
 
-        # Get final WAV filename
-        downloaded_file = Path(ydl.prepare_filename(info))
+        downloaded_file = Path(
+            ydl.prepare_filename(info)
+        )
+
         wav_path = downloaded_file.with_suffix(".wav")
 
     if not wav_path.is_file():
+
         raise FileNotFoundError(
             f"Downloaded WAV file not found: {wav_path}"
         )
 
-    print(f"Download completed: {wav_path}")
+    print("Download completed:", wav_path)
 
     return str(wav_path)
 
@@ -171,7 +198,11 @@ def convert_to_wav(input_path: str) -> str:
         input_file.stem + "_converted.wav"
     )
 
-    audio = AudioSegment.from_file(str(input_file))
+    print("Converting audio to WAV...")
+
+    audio = AudioSegment.from_file(
+        str(input_file)
+    )
 
     # Normalize audio for transcription
     audio = audio.set_channels(1)
@@ -179,10 +210,10 @@ def convert_to_wav(input_path: str) -> str:
 
     audio.export(
         str(output_path),
-        format="wav",
+        format="wav"
     )
 
-    print(f"Audio converted: {output_path}")
+    print("Audio converted:", output_path)
 
     return str(output_path)
 
@@ -197,7 +228,9 @@ def chunk_audio(
 ) -> list:
 
     if chunk_minutes <= 0:
-        raise ValueError("chunk_minutes must be greater than 0")
+        raise ValueError(
+            "chunk_minutes must be greater than 0"
+        )
 
     if not os.path.isfile(wav_path):
         raise FileNotFoundError(
@@ -214,20 +247,25 @@ def chunk_audio(
         range(0, len(audio), chunk_ms)
     ):
 
-        chunk = audio[start:start + chunk_ms]
+        chunk = audio[
+            start:start + chunk_ms
+        ]
 
         chunk_path = (
-            f"{os.path.splitext(wav_path)[0]}_chunk_{i}.wav"
+            f"{os.path.splitext(wav_path)[0]}"
+            f"_chunk_{i}.wav"
         )
 
         chunk.export(
             chunk_path,
-            format="wav",
+            format="wav"
         )
 
         chunks.append(chunk_path)
 
-        print(f"Created chunk {i + 1}: {chunk_path}")
+        print(
+            f"Created chunk {i + 1}: {chunk_path}"
+        )
 
     return chunks
 
@@ -239,34 +277,45 @@ def chunk_audio(
 def process_input(source: str) -> list:
 
     if not source:
-        raise ValueError("Please provide a YouTube URL or file path.")
+        raise ValueError(
+            "Please provide a YouTube URL or file path."
+        )
 
     source = str(source).strip()
 
-    if source.startswith(("http://", "https://")):
+    if source.startswith(
+        ("http://", "https://")
+    ):
 
         print("Detected YouTube URL.")
 
-        downloaded_path = download_youtube_audio(source)
+        downloaded_path = download_youtube_audio(
+            source
+        )
 
-        # Normalize downloaded audio to mono 16 kHz
-        wav_path = convert_to_wav(downloaded_path)
+        wav_path = convert_to_wav(
+            downloaded_path
+        )
 
     else:
 
         print("Detected local audio/video file.")
 
-        wav_path = convert_to_wav(source)
+        wav_path = convert_to_wav(
+            source
+        )
 
     print("Starting audio chunking...")
 
     chunks = chunk_audio(
         wav_path,
-        chunk_minutes=10,
+        chunk_minutes=10
     )
 
     if not chunks:
-        raise ValueError("No audio chunks were created.")
+        raise ValueError(
+            "No audio chunks were created."
+        )
 
     print(
         f"Audio ready! Total chunks created: {len(chunks)}"
