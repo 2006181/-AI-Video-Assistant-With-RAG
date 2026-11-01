@@ -121,7 +121,7 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-MISTRAL_API_KEY=your_mistral_key_here
+GROQ_API_KEY=your_mistral_key_here
 SARVAM_API_KEY=your_sarvam_key_here
 ```
 
