@@ -28,7 +28,7 @@ Give it a YouTube link or an audio/video file. It transcribes the speech (Englis
 | Speech-to-text (English) | OpenAI Whisper (local, free) |
 | Speech-to-text (Hindi/Hinglish) | Sarvam AI |
 | LLM pipeline | LangChain LCEL |
-| LLM | Mistral AI (free API) |
+| LLM | GROQ (free API) |
 | Vector database | ChromaDB |
 | Embeddings | HuggingFace (local, free) |
 | UI | Streamlit |
@@ -87,7 +87,7 @@ YouTube URL / file
 
 - Python 3.10 or newer
 - [FFmpeg](https://ffmpeg.org/download.html) installed and added to your PATH
-- API keys for Mistral AI and Sarvam AI
+- API keys for GROQ and Sarvam AI
 
 ### 2. Clone the repository
 
