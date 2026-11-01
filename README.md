@@ -41,7 +41,7 @@ The app detects where it is running and shows only the options that work there. 
 | Speech-to-text (English) | OpenAI Whisper (local, free) |
 | Speech-to-text (Hindi/Hinglish) | Sarvam AI |
 | LLM pipeline | LangChain LCEL |
-| LLM | Mistral AI (free API) |
+| LLM | GROQ (free API) |
 | Vector database | ChromaDB |
 | Embeddings | HuggingFace (local, free) |
 | Audio/video handling | yt-dlp, pydub, FFmpeg |
@@ -103,7 +103,7 @@ YouTube URL / video / audio file
 
 - Python 3.10 to 3.12 recommended
 - [FFmpeg](https://ffmpeg.org/download.html) installed and added to your PATH
-- API keys for Mistral AI and Sarvam AI
+- API keys for GROQ and Sarvam AI
 
 ### 2. Clone the repository
 
@@ -137,7 +137,7 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-MISTRAL_API_KEY=your_mistral_key_here
+GROQ_API_KEY=your_mistral_key_here
 SARVAM_API_KEY=your_sarvam_key_here
 ```
 
@@ -156,19 +156,7 @@ The app opens at `http://localhost:8501` and shows the YouTube, video and audio 
 
 ## ☁️ Deploy on Streamlit Cloud (audio only)
 
-1. Push the repository to GitHub.
-2. Make sure `packages.txt` exists in the repo root with this single line:
-   ```
-   ffmpeg
-   ```
-3. On [share.streamlit.io](https://share.streamlit.io), create a new app and choose `app.py` as the main file.
-4. In **Advanced settings**, pick Python 3.11 or 3.12 and add your keys under **Secrets**:
-   ```toml
-   GROQ_API_KEY = "your_groq_key_here"
-   GROQ_MODEL = "openai/gpt-oss-120b"
-   SARVAM_API_KEY = "your_sarvam_key_here"
-   ```
-5. Deploy. The hosted app automatically switches to **audio-only** mode.
+STREAMLIT LINK = https://jgntxpz4eb3pclpjs2d7su.streamlit.app/
 
 ---
 
